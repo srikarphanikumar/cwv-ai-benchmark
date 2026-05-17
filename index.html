@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CWV × AI Inference Benchmark</title>
+  <meta name="description" content="Measures Core Web Vitals impact (INP, TBT, LCP, memory) of client-side Transformers.js models." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <header class="site-header">
+      <div class="header-content">
+        <h1>CWV × AI Inference Benchmark</h1>
+        <p>Measures INP, TBT, LCP, memory pressure per Transformers.js model running in-browser on the main thread</p>
+        <div id="baseline-metrics" class="baseline-metrics"></div>
+      </div>
+    </header>
+
+    <main class="main-content">
+
+      <!-- ── Config ──────────────────────────────────────────────────────── -->
+      <section class="config-panel" aria-label="Benchmark configuration">
+        <h2>Config</h2>
+
+        <div class="config-field">
+          <label for="dtype-select">dtype</label>
+          <select id="dtype-select">
+            <option value="q8" selected>q8 (quantized)</option>
+            <option value="fp32">fp32 (full precision)</option>
+            <option value="q4">q4 (4-bit)</option>
+          </select>
+        </div>
+
+        <div class="config-field">
+          <label for="iterations-input">Iterations</label>
+          <input type="number" id="iterations-input" value="3" min="1" max="20" />
+        </div>
+
+        <div id="tbt-notice" class="config-field" hidden style="color:var(--needs-improvement);font-size:0.78rem;">
+          ⚠ Long Tasks API not supported — TBT will be unavailable
+        </div>
+
+        <div class="config-divider"></div>
+
+        <button id="run-all-btn" class="run-all-btn">
+          ▶ Run All Models
+        </button>
+      </section>
+
+      <!-- ── Model cards ──────────────────────────────────────────────────── -->
+      <section class="models-grid" id="models-grid" aria-label="Model benchmark cards"></section>
+
+      <!-- ── Results ─────────────────────────────────────────────────────── -->
+      <section class="results-section" id="results-section" hidden aria-label="Benchmark results">
+        <h2>Comparison</h2>
+        <div class="charts-container" id="charts-container"></div>
+        <div id="metrics-table"></div>
+      </section>
+
+    </main>
+
+    <!-- ── Footer / export ─────────────────────────────────────────────────── -->
+    <footer class="site-footer">
+      <div id="export-controls" class="export-controls" hidden>
+        <span class="export-label">Export raw data:</span>
+        <button id="export-json-btn" class="export-btn">↓ JSON</button>
+        <button id="export-csv-btn" class="export-btn">↓ CSV</button>
+      </div>
+    </footer>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
