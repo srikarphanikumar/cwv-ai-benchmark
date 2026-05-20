@@ -42,7 +42,7 @@ export const MODELS = [
 ];
 
 export const BENCHMARK_DEFAULTS = {
-  iterations: 3,
+  iterations: 10,
   warmup: 1,
   dtype: 'q8',
 };
