@@ -62,13 +62,17 @@ setTimeout(refreshBaseline, 3000);
 // ── Run logic ─────────────────────────────────────────────────────────────────
 runAllBtn?.addEventListener('click', () => runAll());
 
+// Brief pause between models so the HuggingFace CDN isn't hit in a burst
+const INTER_MODEL_DELAY_MS = 500;
+
 async function runAll() {
   if (isRunning) return;
   isRunning = true;
   runAllBtn.disabled = true;
 
-  for (const model of MODELS) {
-    await runSingleModel(model.id);
+  for (let i = 0; i < MODELS.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, INTER_MODEL_DELAY_MS));
+    await runSingleModel(MODELS[i].id);
   }
 
   isRunning = false;
