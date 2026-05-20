@@ -41,10 +41,18 @@ export const MODELS = [
   },
 ];
 
+export const THROTTLE_PRESETS = [
+  { factor: 1, label: 'No throttling' },
+  { factor: 4, label: '4x slowdown (mid-range Android)' },
+  { factor: 6, label: '6x slowdown (low-end Android)' },
+];
+
 export const BENCHMARK_DEFAULTS = {
   iterations: 10,
   warmup: 1,
   dtype: 'q8',
+  throttle: 1,
+  throttleLabel: 'No throttling',
 };
 
 export const LONG_TASK_THRESHOLD_MS = 50;
