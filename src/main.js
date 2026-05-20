@@ -1,5 +1,5 @@
 import './ui/styles.css';
-import { MODELS, BENCHMARK_DEFAULTS } from './constants.js';
+import { MODELS, BENCHMARK_DEFAULTS, THROTTLE_PRESETS } from './constants.js';
 import { BenchmarkRunner } from './benchmark/runner.js';
 import { CWVObserver } from './metrics/cwv.js';
 import {
@@ -31,6 +31,7 @@ const baselinePanel = document.getElementById('baseline-metrics');
 const runAllBtn = document.getElementById('run-all-btn');
 const dtypeSelect = document.getElementById('dtype-select');
 const iterationsInput = document.getElementById('iterations-input');
+const throttleSelect = document.getElementById('throttle-select');
 const tbtNotice = document.getElementById('tbt-notice');
 
 // ── Config wiring ─────────────────────────────────────────────────────────────
@@ -41,6 +42,13 @@ dtypeSelect?.addEventListener('change', () => {
 iterationsInput?.addEventListener('change', () => {
   const v = parseInt(iterationsInput.value, 10);
   if (v >= 1 && v <= 20) runConfig.iterations = v;
+});
+
+throttleSelect?.addEventListener('change', () => {
+  const factor = parseInt(throttleSelect.value, 10);
+  const preset = THROTTLE_PRESETS.find((p) => p.factor === factor) ?? THROTTLE_PRESETS[0];
+  runConfig.throttle = preset.factor;
+  runConfig.throttleLabel = preset.label;
 });
 
 // ── Initial render ────────────────────────────────────────────────────────────
@@ -93,7 +101,13 @@ async function runSingleModel(modelId) {
 
   const result = await runner.runModel(
     model,
-    { dtype: runConfig.dtype, iterations: runConfig.iterations, warmup: BENCHMARK_DEFAULTS.warmup },
+    {
+      dtype: runConfig.dtype,
+      iterations: runConfig.iterations,
+      warmup: BENCHMARK_DEFAULTS.warmup,
+      throttle: runConfig.throttle,
+      throttleLabel: runConfig.throttleLabel,
+    },
     {
       onPhase: (phase) => setCardPhase(modelId, phase),
       onProgress: (info) => updateProgress(modelId, info),
@@ -168,6 +182,8 @@ document.getElementById('export-json-btn')?.addEventListener('click', () => {
       userAgent: navigator.userAgent,
       dtype: runConfig.dtype,
       iterations: runConfig.iterations,
+      throttle: runConfig.throttle,
+      throttleLabel: runConfig.throttleLabel,
       tbtSupported: runner.tbtSupported,
       baseline: cwvObserver.snapshot(),
       bundle: runner.bundleSnapshot(),
