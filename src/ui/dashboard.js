@@ -128,9 +128,14 @@ export function renderCardResult(result) {
   }
 
   const sparkId = `spark-${result.id}`;
+  const throttleLabel = result.throttleLabel ?? 'No throttling';
   el.removeAttribute('hidden');
   el.innerHTML = `
     <div class="metric-grid">
+      <div class="metric-item" style="grid-column:1/-1;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:6px;margin-bottom:2px">
+        <span class="metric-label">CPU throttle</span>
+        <span class="metric-value" style="font-size:0.82em">${throttleLabel}</span>
+      </div>
       <div class="metric-item">
         <span class="metric-label">Load time</span>
         <span class="metric-value">${fmtMs(result.loadTime)}</span>
@@ -249,12 +254,13 @@ export function renderSummaryTable(container, results) {
       if (r.error) {
         return `<tr class="row-error">
           <td>${r.name}</td>
-          <td colspan="8" class="error-cell">⚠ ${r.error}</td>
+          <td colspan="9" class="error-cell">⚠ ${r.error}</td>
         </tr>`;
       }
       return `<tr>
         <td><span class="dot-inline" style="background:${MODELS.find(m=>m.id===r.id)?.color}"></span>${r.name}</td>
         <td>${r.dtype}</td>
+        <td>${r.throttleLabel ?? '—'}</td>
         <td>${fmtMs(r.loadTime)}</td>
         <td>${fmtMs(r.avgInferenceMs)} <small>±${fmtMs(r.stdDevMs)}</small></td>
         <td class="${inpClass(r.inp)}">${fmtMs(r.inp)}</td>
@@ -271,7 +277,7 @@ export function renderSummaryTable(container, results) {
       <table class="results-table">
         <thead>
           <tr>
-            <th>Model</th><th>dtype</th><th>Load</th><th>Avg Inference</th>
+            <th>Model</th><th>dtype</th><th>Throttle</th><th>Load</th><th>Avg Inference</th>
             <th>INP</th><th>TBT</th><th>Long tasks</th><th>Mem Δ</th><th>Mem pressure</th>
           </tr>
         </thead>
