@@ -9,6 +9,8 @@ export function exportCSV(payload) {
   const header = [
     'model',
     'dtype',
+    'throttle_factor',
+    'throttle_label',
     'load_ms',
     'warmup_ms',
     'avg_inference_ms',
@@ -27,6 +29,8 @@ export function exportCSV(payload) {
   const rows = Object.values(payload.models).map((r) => [
     r.name,
     r.dtype,
+    r.throttle ?? 1,
+    r.throttleLabel ?? 'No throttling',
     fmt(r.loadTime),
     fmt(r.warmupTime),
     fmt(r.avgInferenceMs),
@@ -42,7 +46,7 @@ export function exportCSV(payload) {
     r.error ?? '',
   ]);
 
-  const csv = [header, ...rows].map((row) => row.join(',')).join('\n');
+  const csv = [header, ...rows].map((row) => row.map(csvEscape).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   triggerDownload(blob, `cwv-ai-benchmark-${timestamp()}.csv`);
 }
@@ -50,6 +54,11 @@ export function exportCSV(payload) {
 function fmt(v) {
   if (v == null) return '';
   return typeof v === 'number' ? v.toFixed(3) : String(v);
+}
+
+function csvEscape(v) {
+  const s = String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 function timestamp() {
