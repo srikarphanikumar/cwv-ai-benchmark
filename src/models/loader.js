@@ -8,30 +8,22 @@ const _pipelines = new Map();
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 2000;
 
-function isRetryableError(err) {
-  const msg = err?.message ?? '';
-  return (
-    msg.includes('503') ||
-    msg.includes('502') ||
-    msg.includes('Service Unavailable') ||
-    msg.includes('Bad Gateway') ||
-    msg.includes('Failed to fetch') ||
-    msg.includes('NetworkError') ||
-    msg.includes('network error') ||
-    msg.includes('Load failed')
-  );
-}
-
 async function withRetry(fn, maxRetries = MAX_RETRIES) {
+  let lastErr;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (err) {
-      if (!isRetryableError(err) || attempt === maxRetries) throw err;
+      lastErr = err;
+      if (attempt === maxRetries) break;
       const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+      console.warn(
+        `[loader] attempt ${attempt + 1} failed (${err.message}), retrying in ${delay}ms…`,
+      );
       await new Promise((r) => setTimeout(r, delay));
     }
   }
+  throw lastErr;
 }
 
 export async function loadModel(modelConfig, dtype, onProgress) {
