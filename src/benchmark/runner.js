@@ -14,7 +14,11 @@ export class BenchmarkRunner {
     return this.longTaskObserver.supported;
   }
 
-  async runModel(modelConfig, { dtype, iterations, warmup }, callbacks = {}) {
+  async runModel(
+    modelConfig,
+    { dtype, iterations, warmup, throttle = 1, throttleLabel = 'No throttling' },
+    callbacks = {},
+  ) {
     const { id, name } = modelConfig;
     const { onPhase, onProgress, onComplete } = callbacks;
 
@@ -22,6 +26,8 @@ export class BenchmarkRunner {
       id,
       name,
       dtype,
+      throttle,
+      throttleLabel,
       timestamp: Date.now(),
       cached: isPipelineCached(id),
       loadTime: null,
@@ -51,13 +57,13 @@ export class BenchmarkRunner {
       onPhase?.('warmup');
       const warmupT0 = performance.now();
       for (let i = 0; i < warmup; i++) {
-        await runInference(modelConfig, pipe);
+        await runThrottled(modelConfig, pipe, throttle);
       }
       result.warmupTime = performance.now() - warmupT0;
 
       // --- INP measurement: interaction → first inference ---
       onPhase?.('measuring_inp');
-      result.inp = await measureINP(() => runInference(modelConfig, pipe));
+      result.inp = await measureINP(() => runThrottled(modelConfig, pipe, throttle));
 
       // --- Benchmark iterations ---
       onPhase?.('benchmarking');
@@ -65,7 +71,7 @@ export class BenchmarkRunner {
 
       for (let i = 0; i < iterations; i++) {
         const t0 = performance.now();
-        await runInference(modelConfig, pipe);
+        await runThrottled(modelConfig, pipe, throttle);
         const elapsed = performance.now() - t0;
         result.inferenceIterations.push(elapsed);
         onProgress?.({ status: 'iteration', current: i + 1, total: iterations, ms: elapsed });
@@ -110,6 +116,23 @@ export class BenchmarkRunner {
   getAllResults() {
     return Object.fromEntries(this.results);
   }
+}
+
+// Blocks the main thread for `ms` milliseconds to simulate a slower CPU.
+// This is intentionally synchronous — it inflates TBT and INP just as a real
+// slower device would.
+function busyWait(ms) {
+  const end = performance.now() + ms;
+  while (performance.now() < end) { /* spin */ }
+}
+
+// Runs inference then busy-waits for (factor-1)× the inference time so the
+// total wall time equals factor× what the hardware actually took.
+async function runThrottled(modelConfig, pipe, throttle) {
+  const t0 = performance.now();
+  const out = await runInference(modelConfig, pipe);
+  if (throttle > 1) busyWait((performance.now() - t0) * (throttle - 1));
+  return out;
 }
 
 function stdDev(values) {
